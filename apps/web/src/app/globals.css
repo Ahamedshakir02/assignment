@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   THEME SYSTEM
+
+   The design exposes two independent axes in the user dropdown:
+
+     Change Theme -> Light | Dark
+     Color Mode   -> Amber | Blue | Pink | Rose | Emerald | Black
+
+   That is 12 combinations. Rather than writing 12 full palettes, the two axes
+   are kept separate:
+
+     - The NEUTRAL scale (backgrounds, borders, body text) lives in :root and
+       .dark. It does not change with the color mode.
+     - The ACCENT tokens live in [data-accent="..."] blocks and are the only
+       thing the color mode changes.
+
+   Note on --primary: in the design the main call-to-action ("+ Add Task",
+   "Continue as Guest") is neutral black in light mode even when the color mode
+   is Blue. So --primary stays neutral and --accent drives selected states,
+   focus rings, links and active navigation. See README.
+   =========================================================================== */
+
+:root {
+  --radius: 0.625rem;
+
+  /* Neutral scale — light */
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --destructive: #e7000b;
+  --destructive-foreground: #fafafa;
+  /* Fallback only — every accent block below overrides this. */
+  --ring: #171717;
+
+  /* Sidebar — shadcn sidebar-02 token set */
+  --sidebar: #fafafa;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-border: #e5e5e5;
+  --sidebar-accent: #f0f0f0;
+  --sidebar-accent-foreground: #171717;
+
+  /* Priority colours — from the priority indicators in the design */
+  --priority-urgent: #e7000b;
+  --priority-high: #f54900;
+  --priority-medium: #d08700;
+  --priority-low: #a1a1a1;
+  --priority-none: #a1a1a1;
+
+  /* Status dot on the task detail panel */
+  --status-backlog: #f0b100;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #171717;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a1a1a1;
+  --border: #262626;
+  --input: #303030;
+  --destructive: #ff6467;
+  --destructive-foreground: #171717;
+
+  --sidebar: #171717;
+  --sidebar-foreground: #fafafa;
+  --sidebar-border: #262626;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+
+  --priority-urgent: #ff6467;
+  --priority-high: #ff8904;
+  --priority-medium: #fdc700;
+  --priority-low: #737373;
+  --priority-none: #737373;
+
+  --status-backlog: #fdc700;
+}
+
+/* --------------------------------------------------------------------------
+   Accent palettes — one block per Color Mode entry.
+   --accent-solid is the fill, --accent-foreground the text on that fill,
+   --accent-subtle a low-opacity wash for hover and selected rows.
+   -------------------------------------------------------------------------- */
+
+[data-accent="amber"] {
+  --accent-solid: #f59e0b;
+  --accent-foreground: #1c1917;
+  --accent-subtle: #fef3c7;
+  --ring: #f59e0b;
+}
+.dark[data-accent="amber"] {
+  --accent-solid: #fbbf24;
+  --accent-foreground: #1c1917;
+  --accent-subtle: #451a03;
+}
+
+[data-accent="blue"] {
+  --accent-solid: #2563eb;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #dbeafe;
+  --ring: #2563eb;
+}
+.dark[data-accent="blue"] {
+  --accent-solid: #3b82f6;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #172554;
+}
+
+[data-accent="pink"] {
+  --accent-solid: #ec4899;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #fce7f3;
+  --ring: #ec4899;
+}
+.dark[data-accent="pink"] {
+  --accent-solid: #f472b6;
+  --accent-foreground: #500724;
+  --accent-subtle: #500724;
+}
+
+[data-accent="rose"] {
+  --accent-solid: #f43f5e;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #ffe4e6;
+  --ring: #f43f5e;
+}
+.dark[data-accent="rose"] {
+  --accent-solid: #fb7185;
+  --accent-foreground: #4c0519;
+  --accent-subtle: #4c0519;
+}
+
+[data-accent="emerald"] {
+  --accent-solid: #059669;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #d1fae5;
+  --ring: #059669;
+}
+.dark[data-accent="emerald"] {
+  --accent-solid: #10b981;
+  --accent-foreground: #022c22;
+  --accent-subtle: #022c22;
+}
+
+[data-accent="black"] {
+  --accent-solid: #171717;
+  --accent-foreground: #fafafa;
+  --accent-subtle: #f5f5f5;
+  --ring: #171717;
+}
+.dark[data-accent="black"] {
+  --accent-solid: #fafafa;
+  --accent-foreground: #171717;
+  --accent-subtle: #262626;
+}
+
+/* --------------------------------------------------------------------------
+   Expose the variables to Tailwind v4 as utility classes:
+   bg-background, text-muted-foreground, border-border, bg-accent-solid, etc.
+   -------------------------------------------------------------------------- */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-accent-solid: var(--accent-solid);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+  --color-priority-urgent: var(--priority-urgent);
+  --color-priority-high: var(--priority-high);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-low: var(--priority-low);
+  --color-priority-none: var(--priority-none);
+  --color-status-backlog: var(--status-backlog);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Consistent focus treatment, accent-driven. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}

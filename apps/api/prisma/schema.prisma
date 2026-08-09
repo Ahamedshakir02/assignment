@@ -1,0 +1,237 @@
+// Pyramid — task management
+// Modelled directly from the Figma design (list view, board view, task detail,
+// projects, settings). See README for the mapping from screen -> model.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+// Board columns in the design: To Do / Doing / Completed / On Hold.
+// BACKLOG appears in the task detail "Status" field, so it is part of the set
+// even though it is not rendered as a board column.
+enum TaskStatus {
+  BACKLOG
+  TODO
+  DOING
+  COMPLETED
+  ON_HOLD
+}
+
+// Five values, taken from the priority dropdown in the design.
+enum Priority {
+  NONE
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ThemeMode {
+  LIGHT
+  DARK
+}
+
+// "Color Mode" in the user dropdown.
+enum Accent {
+  AMBER
+  BLUE
+  PINK
+  ROSE
+  EMERALD
+  BLACK
+}
+
+enum ViewMode {
+  LIST
+  BOARD
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String  @id @default(cuid())
+  isGuest   Boolean @default(true)
+  email     String? @unique
+  fullName  String?
+  // Settings > Profile: "Your job title or role"
+  title     String?
+  // Settings > Profile: "One word, like a nickname or first name"
+  username  String? @unique
+  avatarUrl String?
+
+  // Persisted UI preferences. The design exposes theme + color mode in two
+  // places (user dropdown and Settings), and field visibility in the Fields
+  // dropdown — all of which must survive a refresh.
+  themeMode     ThemeMode @default(LIGHT)
+  accent        Accent    @default(BLUE)
+  viewMode      ViewMode  @default(LIST)
+  visibleFields Json?
+
+  ownedProjects  Project[]  @relation("ProjectOwner")
+  ledProjects    Project[]  @relation("ProjectLead")
+  ownedTasks     Task[]     @relation("TaskOwner")
+  reportedTasks  Task[]     @relation("TaskReporter")
+  assignedTasks  Task[]     @relation("TaskAssignees")
+  comments       Comment[]
+  activities     Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isGuest, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Project
+// ---------------------------------------------------------------------------
+
+model Project {
+  id       String    @id @default(cuid())
+  name     String
+  priority Priority  @default(NONE)
+  dueDate  DateTime?
+  order    Int       @default(0)
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // "Lead" column on the Projects table.
+  leadId String?
+  lead   User?   @relation("ProjectLead", fields: [leadId], references: [id], onDelete: SetNull)
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId, order])
+}
+
+// ---------------------------------------------------------------------------
+// Task
+// ---------------------------------------------------------------------------
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(NONE)
+
+  // The detail panel shows a start -> end date range, not a single due date.
+  startDate DateTime?
+  dueDate   DateTime?
+
+  // Manual ordering inside a status group / board column.
+  order Int @default(0)
+
+  ownerId String
+  owner   User   @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  // Subtasks are Tasks. The design renders them with the identical table
+  // component as top-level tasks, so they share the model.
+  parentTaskId String?
+  parent       Task?   @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks     Task[]  @relation("Subtasks")
+
+  reporterId String?
+  reporter   User?   @relation("TaskReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+
+  assignees User[]  @relation("TaskAssignees")
+  labels    Label[] @relation("TaskLabels")
+
+  comments   Comment[]
+  activities Activity[]
+  resources  Resource[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId, status, order])
+  @@index([parentTaskId])
+  @@index([projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Supporting models
+// ---------------------------------------------------------------------------
+
+model Label {
+  id    String @id @default(cuid())
+  name  String
+  color String @default("neutral")
+
+  ownerId String
+  tasks   Task[] @relation("TaskLabels")
+
+  createdAt DateTime @default(now())
+
+  @@unique([ownerId, name])
+}
+
+// Task detail -> "Add document or link..."
+model Resource {
+  id     String @id @default(cuid())
+  label  String
+  url    String
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model Comment {
+  id   String @id @default(cuid())
+  body String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // "Leave a reply..." — one level of threading.
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId, createdAt])
+}
+
+// Powers the "Updates" feed in the task detail right rail, e.g.
+// "You changed priority from No priority to Urgent".
+model Activity {
+  id   String @id @default(cuid())
+  type String // "priority_changed" | "status_changed" | "update_posted" | ...
+  from String?
+  to   String?
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId, createdAt])
+}
