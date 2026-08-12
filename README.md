@@ -5,6 +5,8 @@ assessment, implemented from the provided Figma design.
 
 **Live demo:** _(deploying — link goes here)_
 **API docs:** _(deployed API)_`/api/docs`
+**Architecture:** [ARCHITECTURE.md](./ARCHITECTURE.md) — system design, data model,
+auth and tenancy, runtime flows
 
 ---
 
