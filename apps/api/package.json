@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "prisma generate && nest build",
-    "//start": "Applies pending migrations, then boots. Identical to start:prod so that a host defaulting to `npm start` still deploys correctly.",
     "start": "prisma migrate deploy && node dist/main",
     "start:prod": "prisma migrate deploy && node dist/main",
     "start:local": "node dist/main",
@@ -16,7 +15,9 @@
     "db:studio": "prisma studio",
     "lint": "eslint \"src/**/*.ts\" --fix"
   },
-  "prisma": { "seed": "ts-node prisma/seed.ts" },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",
@@ -31,10 +32,9 @@
     "cookie-parser": "^1.4.7",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "prisma": "^6.2.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "//prisma": "A runtime dependency, not a dev one: the container runs `prisma migrate deploy` on boot. Hosts that install with NODE_ENV=production skip devDependencies, which would leave the CLI missing at start.",
-    "prisma": "^6.2.1"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
