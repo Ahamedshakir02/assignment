@@ -11,6 +11,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.use(cookieParser());
 
+  // The browser reaches this service through the web app's rewrite proxy, so
+  // requests are same-origin and CORS is not load-bearing. It stays enabled for
+  // direct access — Swagger at /api/docs, and curl during development.
   app.enableCors({
     origin: (process.env.WEB_ORIGIN ?? 'http://localhost:3000').split(','),
     credentials: true,

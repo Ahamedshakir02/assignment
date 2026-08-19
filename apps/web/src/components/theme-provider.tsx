@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { api } from '@/lib/api';
 import {
   applyTheme,
   DEFAULT_THEME,
@@ -34,16 +35,14 @@ export function ThemeProvider({
     applyTheme(next);
     // Best-effort sync to the server so the preference follows the account,
     // not just the browser. A failure here is not user-facing: the cookie has
-    // already been written.
-    void fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me/preferences`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // already been written, so the theme is correct either way — this includes
+    // the logged-out case on /login, where the request 401s and is ignored.
+    void api
+      .patch('/users/me/preferences', {
         themeMode: next.mode.toUpperCase(),
         accent: next.accent.toUpperCase(),
-      }),
-    }).catch(() => {});
+      })
+      .catch(() => {});
   }, []);
 
   const value = useMemo<ThemeContextValue>(

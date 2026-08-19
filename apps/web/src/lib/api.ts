@@ -1,4 +1,9 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+/**
+ * Empty by default: requests go to the app's own origin and are proxied to the
+ * API by the rewrite in next.config.ts. That keeps the session cookie
+ * first-party, which is what lets middleware read it. See next.config.ts.
+ */
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export class ApiError extends Error {
   constructor(

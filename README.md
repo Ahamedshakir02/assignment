@@ -75,20 +75,36 @@ and the most honest way to match it.
 # 1. Install
 npm install
 
-# 2. Configure
-cp .env.example apps/api/.env
-cp .env.example apps/web/.env.local
-#    Set DATABASE_URL and JWT_SECRET in apps/api/.env
+# 2. Configure — see .env.example, which documents both files
+cp .env.example apps/api/.env       # set DATABASE_URL and JWT_SECRET
+cp .env.example apps/web/.env.local # set API_URL
 
 # 3. Database
 npm run db:generate
 npm run db:migrate
 npm run db:seed        # optional demo content matching the design
 
-# 4. Run
+# 4. Run — both are needed; the web app proxies /api/* to the API
 npm run dev:api        # http://localhost:4000  (docs at /api/docs)
 npm run dev:web        # http://localhost:3000
 ```
+
+### Deploying
+
+| Host | Variables |
+|---|---|
+| Vercel (web) | `API_URL` = the Railway service's public URL, no trailing slash |
+| Railway (API) | `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`, `WEB_ORIGIN` = the Vercel URL |
+
+Do **not** set `NEXT_PUBLIC_API_URL` in production. It bypasses the proxy and puts the
+session cookie on the API's domain, where middleware cannot read it — the result is a
+redirect loop between `/login` and `/tasks`.
+
+Railway is preferred over Render's free tier, which sleeps after 15 minutes and
+cold-starts in roughly 50 seconds. The brief rejects non-working URLs.
+
+Full step-by-step instructions, including the two Neon connection strings and a
+smoke-test checklist, are in **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
 
 ---
 
@@ -170,6 +186,9 @@ with a 401. Every task and project query is scoped by `ownerId` **at the service
 layer**, so no controller can forget to do it and one guest can never see another's
 data.
 
+The cookie is `SameSite=Lax` with no `Domain` attribute, which is correct because all
+browser traffic is same-origin — see the proxy note under Implementation decisions.
+
 ---
 
 ## API
@@ -219,6 +238,19 @@ has an explicit DTO, and all errors return one shape:
 ---
 
 ## Notable implementation decisions
+
+**The API is proxied, not called cross-origin.** `next.config.ts` rewrites `/api/*`
+to the API service, so the browser only ever talks to one origin.
+
+This is a correctness requirement, not a preference. The session lives in an httpOnly
+cookie set by the API. If the browser called the API on its own domain, the cookie
+would be stored against *that* domain — and Next middleware, which runs on the app's
+domain, could never read it. Guest login would succeed, redirect to `/tasks`, get
+bounced back to `/login`, and loop. Locally the bug is invisible, because
+`localhost:3000` and `localhost:4000` are the same site and share cookies; it only
+appears once the two are deployed to different hosts. Proxying also removes CORS
+preflights and the `SameSite=None` requirement, and keeps the API's real address off
+the client (`API_URL` is server-only, deliberately not `NEXT_PUBLIC_`).
 
 **Optimistic updates.** Changing a priority, status, or due date writes to the query
 cache immediately and rolls back precisely on failure by restoring the snapshot taken

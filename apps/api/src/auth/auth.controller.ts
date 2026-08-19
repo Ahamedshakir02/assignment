@@ -52,12 +52,16 @@ export class AuthController {
     const isProd = process.env.NODE_ENV === 'production';
     return {
       httpOnly: true,
-      // Web and API are on different domains in production, so the cookie has
-      // to be SameSite=None + Secure to survive the cross-site request.
-      sameSite: isProd ? ('none' as const) : ('lax' as const),
+      // The web app proxies /api/* to this service (see next.config.ts), so the
+      // browser only ever sees one origin and the cookie is first-party. Lax is
+      // therefore correct in every environment — SameSite=None would only be
+      // needed if the browser called this API cross-site, which it does not.
+      sameSite: 'lax' as const,
       secure: isProd,
       path: '/',
-      ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
+      // Deliberately no Domain attribute: the cookie should be scoped to
+      // whichever host served it. Setting it to the API's own host would put
+      // the cookie somewhere the web middleware cannot read.
     };
   }
 }

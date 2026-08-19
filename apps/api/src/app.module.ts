@@ -8,6 +8,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { ProjectsModule } from './projects/projects.module';
 import { CommentsModule } from './comments/comments.module';
 import { LabelsModule } from './labels/labels.module';
+import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
     ProjectsModule,
     CommentsModule,
     LabelsModule,
+    HealthModule,
   ],
   // Auth is on by default everywhere. Routes opt out with @Public().
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
